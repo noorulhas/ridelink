@@ -1,0 +1,5 @@
+{
+  "name": "RideLink - Taxi Sharing",
+  "description": "A taxi ride-sharing application where drivers can post their upcoming rides and users can search for and book seats based on their starting location and destination.",
+  "requestFramePermissions": []
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserRole } from './types';
+import { UserRole, Ride } from './types';
 import Header from './components/Header';
 import Tabs from './components/Tabs';
 import DriverPortal from './components/DriverPortal';

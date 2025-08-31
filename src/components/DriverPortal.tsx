@@ -9,5 +9,8 @@
  }
  
  const DriverPortal: React.FC<DriverPortalProps> = ({ onAddRide }) => {
+ }
 +  const { user } = useAuth();
    const [formData, setFormData] = useState({
+   }
+   )

@@ -29,6 +29,9 @@ export const useRides = () => {
         availableSeats: ride.available_seats,
         contactDetail: ride.contact_detail,
         remarks: ride.remarks || undefined,
+        userId: ride.user_id || undefined,
+        createdAt: ride.created_at,
+        updatedAt: ride.updated_at,
       }));
 
       setRides(formattedRides);

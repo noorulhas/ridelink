@@ -1,58 +1,46 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { Ride } from '../types';
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import type { Ride } from '../types'
 
-export const useRides = () => {
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useRides() {
+  const [rides, setRides] = useState<Ride[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchRides = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      setLoading(true)
+      setError(null)
+      
+      const { data, error: fetchError } = await supabase
         .from('rides')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
-
-      const formattedRides: Ride[] = data.map(ride => ({
-        id: ride.id,
-        driverName: ride.driver_name,
-        carModel: ride.car_model,
-        startLocation: ride.start_location,
-        destination: ride.destination,
-        rideDate: ride.ride_date,
-        rideTime: ride.ride_time,
-        price: ride.price,
-        availableSeats: ride.available_seats,
-        contactDetail: ride.contact_detail,
-        remarks: ride.remarks || undefined,
-        userId: ride.user_id || undefined,
-        createdAt: ride.created_at,
-        updatedAt: ride.updated_at,
-      }));
-
-      setRides(formattedRides);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addRide = async (rideData: Omit<Ride, 'id'>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('You must be logged in to post a ride');
+      if (fetchError) {
+        console.error('Supabase error:', fetchError)
+        throw fetchError
       }
 
-      const { data, error } = await supabase
+      console.log('Fetched rides from database:', data)
+      setRides(data || [])
+    } catch (err) {
+      console.error('Error fetching rides:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch rides')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addRide = async (rideData: Omit<Ride, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      setError(null)
+      
+      console.log('Adding ride to database:', rideData)
+      
+      const { data, error: insertError } = await supabase
         .from('rides')
-        .insert({
+        .insert([{
           driver_name: rideData.driverName,
           car_model: rideData.carModel,
           start_location: rideData.startLocation,
@@ -62,70 +50,78 @@ export const useRides = () => {
           price: rideData.price,
           available_seats: rideData.availableSeats,
           contact_detail: rideData.contactDetail,
-          remarks: rideData.remarks || null,
-          user_id: user.id,
-        })
+          remarks: rideData.remarks || null
+        }])
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        throw insertError
+      }
 
-      // Add the new ride to local state
-      const newRide: Ride = {
-        id: data.id,
-        driverName: data.driver_name,
-        carModel: data.car_model,
-        startLocation: data.start_location,
-        destination: data.destination,
-        rideDate: data.ride_date,
-        rideTime: data.ride_time,
-        price: data.price,
-        availableSeats: data.available_seats,
-        contactDetail: data.contact_detail,
-        remarks: data.remarks || undefined,
-      };
-
-      setRides(prev => [newRide, ...prev]);
-      return { success: true };
+      console.log('Successfully added ride:', data)
+      
+      // Refresh the rides list
+      await fetchRides()
+      
+      return data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add ride');
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to add ride' };
+      console.error('Error adding ride:', err)
+      setError(err instanceof Error ? err.message : 'Failed to add ride')
+      throw err
     }
-  };
+  }
 
   const bookRide = async (rideId: string) => {
     try {
-      const ride = rides.find(r => r.id === rideId);
-      if (!ride || ride.availableSeats <= 0) {
-        throw new Error('Ride not available');
+      setError(null)
+      
+      const { data, error: updateError } = await supabase
+        .from('rides')
+        .update({ 
+          available_seats: supabase.sql`available_seats - 1` 
+        })
+        .eq('id', rideId)
+        .gt('available_seats', 0)
+        .select()
+        .single()
+
+      if (updateError) {
+        console.error('Booking error:', updateError)
+        throw updateError
       }
 
-      const { error } = await supabase
-        .from('rides')
-        .update({ available_seats: ride.availableSeats - 1 })
-        .eq('id', rideId);
-
-      if (error) throw error;
-
-      // Update local state
-      setRides(prev => 
-        prev.map(r => 
-          r.id === rideId 
-            ? { ...r, availableSeats: r.availableSeats - 1 }
-            : r
-        )
-      );
-
-      return { success: true };
+      // Refresh the rides list
+      await fetchRides()
+      
+      return data
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to book ride');
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to book ride' };
+      console.error('Error booking ride:', err)
+      setError(err instanceof Error ? err.message : 'Failed to book ride')
+      throw err
     }
-  };
+  }
 
   useEffect(() => {
-    fetchRides();
-  }, []);
+    fetchRides()
+    
+    // Set up real-time subscription
+    const subscription = supabase
+      .channel('rides_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'rides' },
+        (payload) => {
+          console.log('Real-time update:', payload)
+          fetchRides() // Refresh data when changes occur
+        }
+      )
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   return {
     rides,
@@ -133,6 +129,6 @@ export const useRides = () => {
     error,
     addRide,
     bookRide,
-    refetch: fetchRides,
-  };
-};
+    refetch: fetchRides
+  }
+}

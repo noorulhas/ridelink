@@ -23,29 +23,34 @@ const App: React.FC = () => {
     }, 3000);
   };
 
-  const handleAddRide = async (rideData: Omit<Ride, 'id'>) => {
+  const handleAddRide = async (rideData: Omit<Ride, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) {
       setAuthModalOpen(true);
+      setAuthMode('signup');
       return;
     }
 
-    const result = await addRide(rideData);
-    if (result.success) {
+    try {
+      await addRide(rideData);
       showNotification('Ride successfully posted!');
       setActiveRole(UserRole.PASSENGER);
-    } else {
-      showNotification(result.error || 'Failed to post ride');
+    } catch (error) {
+      console.error('Error adding ride:', error);
+      showNotification('Failed to post ride. Please try again.');
     }
   };
 
   const handleBookRide = async (rideId: string) => {
-    const ride = rides.find(r => r.id === rideId);
-    const result = await bookRide(rideId);
-    
-    if (result.success && ride) {
-      showNotification(`Booking confirmed for ride to ${ride.destination}!`);
-    } else {
-      showNotification(result.error || 'Failed to book ride');
+    try {
+      const ride = rides.find(r => r.id === rideId);
+      await bookRide(rideId);
+      
+      if (ride) {
+        showNotification(`Booking confirmed for ride to ${ride.destination}!`);
+      }
+    } catch (error) {
+      console.error('Error booking ride:', error);
+      showNotification('Failed to book ride. Please try again.');
     }
   };
 

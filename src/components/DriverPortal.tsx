@@ -1,298 +1,168 @@
-import React, { useState } from 'react'
-import { Car, MapPin, Clock, DollarSign, Users, Phone, MessageSquare } from 'lucide-react'
+import React, { useState } from 'react';
+import { Ride } from '../types';
+import { CITIES } from '../constants';
+import { useAuth } from '../hooks/useAuth';
 
 interface DriverPortalProps {
-  onAddRide: (ride: {
-    driverName: string
-    carModel: string
-    startLocation: string
-    destination: string
-    rideDate: string
-    rideTime: string
-    price: number
-    availableSeats: number
-    contactDetail: string
-    remarks?: string
-  }) => Promise<void>
+  onAddRide: (ride: Omit<Ride, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
-export function DriverPortal({ onAddRide }: DriverPortalProps) {
+const DriverPortal: React.FC<DriverPortalProps> = ({ onAddRide }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     driverName: '',
     carModel: '',
     startLocation: '',
+    customStartLocation: '',
     destination: '',
+    customDestination: '',
     rideDate: '',
     rideTime: '',
     price: '',
     availableSeats: '',
     contactDetail: '',
-    remarks: ''
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitMessage, setSubmitMessage] = useState('')
+    remarks: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     
-    if (isSubmitting) return
+    if (!user) {
+      alert('Please sign in to post a ride');
+      return;
+    }
+
+    if (isSubmitting) return;
     
-    setIsSubmitting(true)
-    setSubmitMessage('')
+    setIsSubmitting(true);
     
     try {
-      await onAddRide({
+      const rideData = {
         driverName: formData.driverName,
         carModel: formData.carModel,
-        startLocation: formData.startLocation,
-        destination: formData.destination,
+        startLocation: formData.startLocation === 'Other' ? formData.customStartLocation : formData.startLocation,
+        destination: formData.destination === 'Other' ? formData.customDestination : formData.destination,
         rideDate: formData.rideDate,
         rideTime: formData.rideTime,
         price: parseFloat(formData.price),
-        availableSeats: parseInt(formData.availableSeats),
+        availableSeats: parseInt(formData.availableSeats, 10),
         contactDetail: formData.contactDetail,
-        remarks: formData.remarks
-      })
+        remarks: formData.remarks,
+        userId: user.id,
+      };
+
+      // Validate required fields
+      if (!rideData.driverName || !rideData.carModel || !rideData.startLocation || 
+          !rideData.destination || !rideData.rideDate || !rideData.rideTime || 
+          !rideData.contactDetail || isNaN(rideData.price) || isNaN(rideData.availableSeats)) {
+        alert('Please fill out all required fields correctly.');
+        return;
+      }
       
-      setSubmitMessage('Ride posted successfully!')
-      
-      // Reset form
+      await onAddRide(rideData);
+
+      // Reset form on success
       setFormData({
         driverName: '',
         carModel: '',
         startLocation: '',
+        customStartLocation: '',
         destination: '',
+        customDestination: '',
         rideDate: '',
         rideTime: '',
         price: '',
         availableSeats: '',
         contactDetail: '',
-        remarks: ''
-      })
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSubmitMessage(''), 3000)
+        remarks: '',
+      });
     } catch (error) {
-      console.error('Error posting ride:', error)
-      setSubmitMessage('Failed to post ride. Please try again.')
+      console.error('Error submitting ride:', error);
+      alert('Failed to post ride. Please try again.');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Sign In Required</h2>
+        <p className="text-gray-600 mb-6">You need to sign in to post a ride.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition-colors duration-300"
+        >
+          Sign In
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8">
-      <div className="flex items-center gap-3 mb-6">
-        <Car className="w-8 h-8 text-blue-600" />
-        <h2 className="text-2xl font-bold text-gray-800">Post a Ride</h2>
-      </div>
-      
-      {submitMessage && (
-        <div className={`mb-4 p-3 rounded-lg ${
-          submitMessage.includes('successfully') 
-            ? 'bg-green-100 text-green-700 border border-green-200' 
-            : 'bg-red-100 text-red-700 border border-red-200'
-        }`}>
-          {submitMessage}
-        </div>
-      )}
-      
+    <div>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Post a New Ride</h2>
+      <p className="text-gray-600 mb-6">Fill in the details below to add your trip to the listings.</p>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Car className="w-4 h-4" />
-              Driver Name
-            </label>
-            <input
-              type="text"
-              name="driverName"
-              value={formData.driverName}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Your full name"
-            />
-          </div>
+        {/* Row for location and date/time */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <select name="startLocation" value={formData.startLocation} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required>
+            <option value="" disabled>Select Starting Location</option>
+            {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
+            <option value="Other">Other</option>
+          </select>
           
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Car className="w-4 h-4" />
-              Car Model
-            </label>
-            <input
-              type="text"
-              name="carModel"
-              value={formData.carModel}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="e.g., Toyota Camry 2020"
-            />
-          </div>
+          <select name="destination" value={formData.destination} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required>
+            <option value="" disabled>Select Destination</option>
+            {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
+            <option value="Other">Other</option>
+          </select>
+
+          <input type="date" name="rideDate" value={formData.rideDate} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required min={new Date().toISOString().split('T')[0]} />
+          <input type="time" name="rideTime" value={formData.rideTime} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <MapPin className="w-4 h-4" />
-              Start Location
-            </label>
-            <input
-              type="text"
-              name="startLocation"
-              value={formData.startLocation}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Departure location"
-            />
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <MapPin className="w-4 h-4" />
-              Destination
-            </label>
-            <input
-              type="text"
-              name="destination"
-              value={formData.destination}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Arrival location"
-            />
-          </div>
+        {/* Row for custom locations if needed */}
+        {(formData.startLocation === 'Other' || formData.destination === 'Other') && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {formData.startLocation === 'Other' && (
+                <input type="text" name="customStartLocation" placeholder="Enter Custom Starting Location" value={formData.customStartLocation} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
+            )}
+            {formData.destination === 'Other' && (
+                <input type="text" name="customDestination" placeholder="Enter Custom Destination" value={formData.customDestination} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
+            )}
+            </div>
+        )}
+        
+        {/* Grid for other details */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-200">
+          <input type="text" name="driverName" placeholder="Driver Name" value={formData.driverName} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
+          <input type="text" name="carModel" placeholder="Car Type & Model" value={formData.carModel} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" required />
+          <input type="number" name="price" placeholder="Price per Seat (AED)" value={formData.price} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" min="0" step="0.01" required />
+          <input type="number" name="availableSeats" placeholder="Available Seats" value={formData.availableSeats} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent" min="1" step="1" required />
+          <input type="text" name="contactDetail" placeholder="Contact Detail (e.g., Phone)" value={formData.contactDetail} onChange={handleChange} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent sm:col-span-2" required />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Clock className="w-4 h-4" />
-              Date
-            </label>
-            <input
-              type="date"
-              name="rideDate"
-              value={formData.rideDate}
-              onChange={handleChange}
-              required
-              min={new Date().toISOString().split('T')[0]}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Clock className="w-4 h-4" />
-              Time
-            </label>
-            <input
-              type="time"
-              name="rideTime"
-              value={formData.rideTime}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
-        </div>
+         <div>
+            <textarea name="remarks" placeholder="Additional Remarks (e.g., luggage policy, pickup points)" value={formData.remarks} onChange={handleChange} rows={3} className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"></textarea>
+         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <DollarSign className="w-4 h-4" />
-              Price ($)
-            </label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              min="0"
-              step="0.01"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="0.00"
-            />
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Users className="w-4 h-4" />
-              Available Seats
-            </label>
-            <input
-              type="number"
-              name="availableSeats"
-              value={formData.availableSeats}
-              onChange={handleChange}
-              required
-              min="1"
-              max="8"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="1"
-            />
-          </div>
-          
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-              <Phone className="w-4 h-4" />
-              Contact
-            </label>
-            <input
-              type="text"
-              name="contactDetail"
-              value={formData.contactDetail}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="Phone or email"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-            <MessageSquare className="w-4 h-4" />
-            Remarks (Optional)
-          </label>
-          <textarea
-            name="remarks"
-            value={formData.remarks}
-            onChange={handleChange}
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-            placeholder="Any additional information..."
-          />
-        </div>
-
-        <button
-          type="submit"
+        <button 
+          type="submit" 
           disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+          className="w-full bg-yellow-500 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
         >
-          {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Posting Ride...
-            </>
-          ) : (
-            <>
-              <Car className="w-5 h-5" />
-              Post Ride
-            </>
-          )}
+          {isSubmitting ? 'Posting Ride...' : 'Post Ride'}
         </button>
       </form>
     </div>
-  )
-}
+  );
+};
+
+export default DriverPortal;

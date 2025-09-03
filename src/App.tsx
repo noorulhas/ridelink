@@ -7,6 +7,7 @@ import PassengerPortal from './components/PassengerPortal';
 import AuthModal from './components/AuthModal';
 import { useAuth } from './hooks/useAuth';
 import { useRides } from './hooks/useRides';
+import { isSupabaseConfigured } from './lib/supabase';
 
 const App: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -73,6 +74,13 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-50 font-sans">
       <Header onAuthClick={() => setAuthModalOpen(true)} />
       <main className="container mx-auto max-w-4xl p-4 sm:p-6">
+        {!isSupabaseConfigured && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+            <p className="font-bold">Demo Mode</p>
+            <p>Supabase is not configured. The app is running with mock data. To enable database storage, click "Connect to Supabase" in the top right.</p>
+          </div>
+        )}
+        
         {notification && (
           <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md" role="alert">
             <p className="font-bold">Success</p>

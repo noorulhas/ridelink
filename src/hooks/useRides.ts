@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import type { Ride } from '../types';
 
@@ -45,6 +45,40 @@ export function useRides() {
   });
 
   const fetchRides = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      console.log('Supabase not configured, using mock data');
+      setRides([
+        {
+          id: '1',
+          driverName: 'John Doe',
+          carModel: 'Toyota Camry',
+          startLocation: 'Dubai',
+          destination: 'Abu Dhabi',
+          rideDate: '2025-02-01',
+          rideTime: '10:00',
+          price: 25,
+          availableSeats: 3,
+          contactDetail: '555-123-4567',
+          remarks: 'Max 2 small bags per person. No pets allowed.',
+        },
+        {
+          id: '2',
+          driverName: 'Jane Smith',
+          carModel: 'Honda Civic',
+          startLocation: 'Sharjah',
+          destination: 'Dubai',
+          rideDate: '2025-02-01',
+          rideTime: '12:30',
+          price: 15,
+          availableSeats: 2,
+          contactDetail: '555-987-6543',
+          remarks: 'Pickup from Central Mall.',
+        },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -76,6 +110,18 @@ export function useRides() {
   };
 
   const addRide = async (rideData: Omit<Ride, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!isSupabaseConfigured || !supabase) {
+      // Fallback to local state when Supabase isn't configured
+      const newRide: Ride = {
+        ...rideData,
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setRides(prev => [newRide, ...prev]);
+      return { success: true, data: newRide };
+    }
+
     try {
       setError(null);
       
@@ -125,6 +171,19 @@ export function useRides() {
   };
 
   const bookRide = async (rideId: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      // Fallback to local state when Supabase isn't configured
+      setRides(prev => 
+        prev.map(ride => {
+          if (ride.id === rideId && ride.availableSeats > 0) {
+            return { ...ride, availableSeats: ride.availableSeats - 1 };
+          }
+          return ride;
+        })
+      );
+      return { success: true, data: null };
+    }
+
     try {
       setError(null);
       
@@ -176,6 +235,10 @@ export function useRides() {
   useEffect(() => {
     fetchRides();
     
+    if (!isSupabaseConfigured || !supabase) {
+      return;
+    }
+
     // Set up real-time subscription
     const subscription = supabase
       .channel('rides_changes')

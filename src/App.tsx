@@ -72,7 +72,10 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Header onAuthClick={() => setAuthModalOpen(true)} />
+      <Header onAuthClick={() => {
+        setAuthModalOpen(true);
+        setAuthMode('signin');
+      }} />
       <main className="container mx-auto max-w-4xl p-4 sm:p-6">
         {!isSupabaseConfigured && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-md" role="alert">

@@ -79,8 +79,40 @@ const App: React.FC = () => {
       <main className="container mx-auto max-w-4xl p-4 sm:p-6">
         {!isSupabaseConfigured && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-md" role="alert">
-            <p className="font-bold">Demo Mode</p>
-            <p>Supabase is not configured. The app is running with mock data. Authentication and data persistence are disabled. To enable full functionality, click "Connect to Supabase" in the top right.</p>
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-yellow-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div>
+                <p className="font-bold text-lg">⚠️ Database Not Connected</p>
+                <p className="mt-1">Your app is running in <strong>Demo Mode</strong> with temporary data that won't be saved.</p>
+                <div className="mt-3 p-3 bg-yellow-50 rounded-md border border-yellow-200">
+                  <p className="font-semibold text-yellow-800 mb-2">To enable full functionality:</p>
+                  <ol className="list-decimal list-inside text-sm text-yellow-700 space-y-1">
+                    <li>Click the <strong>"Connect to Supabase"</strong> button in the top right corner</li>
+                    <li>Follow the setup wizard to connect your database</li>
+                    <li>Your data will then be saved permanently</li>
+                  </ol>
+                </div>
+                <div className="mt-3 text-sm text-yellow-600">
+                  <strong>Current limitations:</strong> Authentication disabled • Data resets on refresh • No data persistence
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {isSupabaseConfigured && (
+          <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-bold">✅ Database Connected</p>
+                <p>Your app is connected to Supabase. All data will be saved permanently!</p>
+              </div>
+            </div>
           </div>
         )}
         

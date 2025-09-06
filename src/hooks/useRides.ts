@@ -46,7 +46,7 @@ export function useRides() {
 
   const fetchRides = async () => {
     if (!isSupabaseConfigured || !supabase) {
-      console.log('Supabase not configured, using mock data');
+      console.log('🔄 Supabase not configured, using mock data');
       setRides([
         {
           id: '1',
@@ -83,7 +83,7 @@ export function useRides() {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching rides from Supabase...');
+      console.log('🔄 Fetching rides from Supabase database...');
       
       const { data, error: fetchError } = await supabase
         .from('rides')
@@ -95,14 +95,13 @@ export function useRides() {
         throw fetchError;
       }
 
-      console.log('Raw data from Supabase:', data);
+      console.log('✅ Successfully fetched rides from database:', data?.length || 0, 'rides');
       
       const convertedRides = data ? data.map(convertDbRideToAppRide) : [];
-      console.log('Converted rides:', convertedRides);
       
       setRides(convertedRides);
     } catch (err) {
-      console.error('Error fetching rides:', err);
+      console.error('❌ Error fetching rides from database:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch rides');
     } finally {
       setLoading(false);
@@ -129,7 +128,7 @@ export function useRides() {
         throw new Error('You must be logged in to post a ride');
       }
       
-      console.log('Adding ride to database:', rideData);
+      console.log('🔄 Adding ride to Supabase database...');
       
       const dbRideData = {
         driver_name: rideData.driverName,
@@ -156,14 +155,14 @@ export function useRides() {
         throw insertError;
       }
 
-      console.log('Successfully added ride:', data);
+      console.log('✅ Successfully added ride to database:', data);
       
       // Refresh the rides list
       await fetchRides();
       
       return { success: true, data };
     } catch (err) {
-      console.error('Error adding ride:', err);
+      console.error('❌ Error adding ride to database:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to add ride';
       setError(errorMessage);
       return { success: false, error: errorMessage };

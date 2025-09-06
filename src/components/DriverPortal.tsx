@@ -92,15 +92,26 @@ const DriverPortal: React.FC<DriverPortalProps> = ({ onAddRide }) => {
 
   if (!user) {
     return (
-      <div className="text-center py-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Sign In Required</h2>
-        <p className="text-gray-600 mb-6">You need to sign in to post a ride.</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="bg-yellow-500 text-white font-bold py-3 px-6 rounded-md hover:bg-yellow-600 transition-colors duration-300"
-        >
-          Sign In
-        </button>
+      <div className="text-center py-12 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+        <div className="max-w-md mx-auto">
+          <div className="bg-yellow-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">Create an account or sign in to start posting your rides and connect with passengers.</p>
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <h3 className="font-semibold text-gray-800 mb-2">Why create an account?</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>✓ Post unlimited rides</li>
+              <li>✓ Manage your listings</li>
+              <li>✓ Connect with passengers</li>
+              <li>✓ Build your driver reputation</li>
+            </ul>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">Click "Sign In" in the top right corner to get started</p>
+        </div>
       </div>
     );
   }

@@ -72,6 +72,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onToggleMo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="Enter your email address"
               required
             />
           </div>
@@ -85,10 +86,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onToggleMo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="Enter your password (min 6 characters)"
               required
               minLength={6}
             />
           </div>
+
+          {mode === 'signup' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <p className="text-sm text-blue-700">
+                <strong>Creating an account allows you to:</strong>
+              </p>
+              <ul className="text-sm text-blue-600 mt-1 ml-4 list-disc">
+                <li>Post your own rides</li>
+                <li>Manage your ride listings</li>
+                <li>Track your bookings</li>
+              </ul>
+            </div>
+          )}
 
           <button
             type="submit"

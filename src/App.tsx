@@ -77,7 +77,7 @@ const App: React.FC = () => {
         {!isSupabaseConfigured && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-md" role="alert">
             <p className="font-bold">Demo Mode</p>
-            <p>Supabase is not configured. The app is running with mock data. To enable database storage, click "Connect to Supabase" in the top right.</p>
+            <p>Supabase is not configured. The app is running with mock data. Authentication and data persistence are disabled. To enable full functionality, click "Connect to Supabase" in the top right.</p>
           </div>
         )}
         
